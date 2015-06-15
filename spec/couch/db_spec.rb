@@ -2,7 +2,7 @@
 require 'spec_helper'
 
 
-TEST_DB='test'
+TEST_DB="test_#{RUBY_ENGINE}"
 
 # require 'json'
 
@@ -29,12 +29,12 @@ describe Couch do
   it 'can create documents' do
     i=0
     couch.post_bulk_throttled(TEST_DB, [
-                                          {_id: 'hello1'},
-                                          {_id: 'hello2'},
-                                          {_id: 'hello3'},
-                                          {_id: 'hello4'},
-                                      ],
-                               max_array_length: 2) do |res|
+                                         {_id: 'hello1'},
+                                         {_id: 'hello2'},
+                                         {_id: 'hello3'},
+                                         {_id: 'hello4'},
+                                     ],
+                              max_array_length: 2) do |res|
       expect(res.kind_of?(Net::HTTPSuccess)).to eq(true)
       i+=1
     end
