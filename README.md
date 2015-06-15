@@ -75,6 +75,13 @@ Or install it yourself as:
     (1..11).each do |i|
       couch.add_to_queue({_id: "document-#{i}"})
     end
+    
+    # Get single document. 
+    puts couch.get_doc(
+                       'document-7', 
+                       {stale: 'ok'} # Pass URL parameters in a hash
+                      )
+    
     # Flush remaining docs
     l = couch.flush_queue
     puts "Flushed remaining #{l} docs in queue"
