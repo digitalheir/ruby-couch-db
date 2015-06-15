@@ -35,21 +35,19 @@ module Couch
     end
 
     def put(uri, json)
-      req = Net::HTTP::Put.new(uri)
+      posty_request(json, Net::HTTP::Put.new(uri))
+    end
+
+    def post(uri, json)
+      posty_request(json, Net::HTTP::Post.new(uri))
+    end
+
+    def posty_request(json, req)
       req.basic_auth @options[:name], @options[:password]
       req['Content-Type'] = 'text/plain;charset=utf-8'
       req.body = json
       request(req)
     end
-
-    def post(uri, json)
-      req = Net::HTTP::Post.new(uri)
-      req.basic_auth @options[:name], @options[:password]
-      req['Content-Type'] = 'application/json;charset=UTF-8'
-      req.body = json
-      request(req)
-    end
-
 
     def request(req, open_timeout=5*30, read_timeout=5*30, fail_silent=false)
       res = Net::HTTP.start(@url.host, @url.port,
@@ -131,10 +129,7 @@ module Couch
       #
       # This method assumes your docs dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
       def all_docs(db, limit=500, opts={}, &block)
-        get_result = lambda { |options|
-          get_all_docs(db, options)
-        }
-        handle_bulk_get(block, get_result, limit, opts)
+        handle_bulk_get(block, lambda { |options| get_all_docs(db, options) }, limit, opts)
       end
 
       # Returns an array of all rows for given view.
@@ -152,10 +147,7 @@ module Couch
       #
       # This method assumes your keys dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
       def rows_for_view(db, design_doc, view, limit=500, opts={}, &block)
-        get_results = lambda do |options|
-          get_rows_for_view(db, design_doc, view, options)
-        end
-        handle_bulk_get(block, get_results, limit, opts)
+        handle_bulk_get(block, lambda { |options| get_rows_for_view(db, design_doc, view, options) }, limit, opts)
       end
 
 
@@ -180,10 +172,7 @@ module Couch
 
       # Returns an array of all ids in the database
       def all_ids(db, limit=500, opts={}, &block)
-        get_results = lambda do |options|
-          get_all_ids(db, options)
-        end
-        handle_bulk_get(block, get_results, limit, opts)
+        handle_bulk_get(block, lambda { |options| get_all_ids(db, options) }, limit, opts)
       end
 
       # Returns an array of the full documents for given view, possibly filtered with given parameters. Note that the 'include_docs' parameter must be set to true for this.
@@ -204,10 +193,7 @@ module Couch
       #
       # This method assumes your keys dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
       def docs_for_view(db, design_doc, view, limit=500, opts={}, &block)
-        get_results = lambda do |options|
-          get_docs_for_view(db, design_doc, view, options)
-        end
-        handle_bulk_get(block, get_results, limit, opts)
+        handle_bulk_get(block, lambda { |options| get_docs_for_view(db, design_doc, view, options) }, limit, opts)
       end
 
       private
