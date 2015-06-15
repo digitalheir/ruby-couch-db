@@ -33,6 +33,7 @@ Or install it yourself as:
 
     require 'couch/db'
     
+    # Subclass Couch::Server for application-specific logic
     class MyCouch < Couch::Server
       DB_NAME = 'my-db'
     
@@ -61,6 +62,10 @@ Or install it yourself as:
         length
       end
     end
+    
+    #####################
+    # Script starts here 
+    #####################
     
     # Initialize couch interface
     couch = MyCouch.new
