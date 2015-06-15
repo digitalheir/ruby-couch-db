@@ -2,7 +2,7 @@
 require 'spec_helper'
 
 
-TEST_DB="test_#{RUBY_VERSION}"
+TEST_DB="test_#{RUBY_VERSION}".gsub('.', '_')
 
 # require 'json'
 
