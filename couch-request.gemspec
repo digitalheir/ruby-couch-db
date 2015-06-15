@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors = ['Maarten Trompper']
   spec.email = ['maartentrompper@gmail.com']
 
-  spec.required_ruby_version = '>= 1.9.2'
+  spec.required_ruby_version = '>= 2'
 
   spec.summary = %q{Interface with a CouchDB database. Focuses on bulk requests.}
   # spec.description   = %q{Write a longer description or delete this line.}
