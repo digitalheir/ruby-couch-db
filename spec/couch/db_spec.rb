@@ -2,7 +2,7 @@
 require 'spec_helper'
 
 
-TEST_DB="test_#{RUBY_ENGINE}"
+TEST_DB="test_#{RUBY_VERSION}"
 
 # require 'json'
 
