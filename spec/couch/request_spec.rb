@@ -28,7 +28,7 @@ describe Couch::Request do
 
   it 'can create documents' do
     i=0
-    couch.flush_bulk_throttled(TEST_DB, [
+    couch.post_bulk_throttled(TEST_DB, [
                                           {_id: 'hello1'},
                                           {_id: 'hello2'},
                                           {_id: 'hello3'},

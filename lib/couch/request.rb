@@ -275,14 +275,14 @@ module Couch
       end
     end
 
-    module Flush
+    module Post
       # Flushes the given hashes to CouchDB
-      def flush_bulk(database, docs)
+      def post_bulk(database, docs)
         body = {:docs => docs}.to_json #.force_encoding('utf-8')
         post("/#{database}/_bulk_docs", body)
       end
 
-      def flush_bulk_throttled(db, docs, max_size_mb: 15, max_array_length: 300, &block)
+      def post_bulk_throttled(db, docs, max_size_mb: 15, max_array_length: 300, &block)
         # puts "Flushing #{docs.length} docs"
         bulk = []
         bytesize = 0
@@ -301,12 +301,16 @@ module Couch
       end
 
 
-      def flush_bulk_if_big_enough(db, docs, flush_size_mb=10, max_array_length=300)
-        if get_bytesize_array(docs) >= flush_size_mb*1024*1024 or docs.length >= max_array_length
-          flush_bulk_throttled(db, docs)
+      def post_bulk_if_big_enough(db, docs, flush_size_mb: 10, max_array_length: 300)
+        flush = (get_bytesize_array(docs) >= (flush_size_mb*1024*1024) or docs.length >= max_array_length)
+        if flush
+          post_bulk_throttled(db, docs)
           docs.clear
         end
+        flush
       end
+
+      private
 
       def get_bytesize_array(docs)
         bytesize = 0
@@ -317,9 +321,8 @@ module Couch
         bytesize
       end
 
-      private
       def handle_bulk_flush(bulk, db, block)
-        res = flush_bulk(db, bulk)
+        res = post_bulk(db, bulk)
         error_count=0
         if res.body
           begin
@@ -354,7 +357,7 @@ module Couch
     include BasicRequest::Get
     include BulkRequest::Get
     include BulkRequest::Delete
-    include BulkRequest::Flush
+    include BulkRequest::Post
 
     private
   end
