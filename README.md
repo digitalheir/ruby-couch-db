@@ -1,5 +1,5 @@
 # Ruby CouchDB
-[![Build Status](https://travis-ci.org/digitalheir/couch-request.svg)](https://travis-ci.org/digitalheir/couch-request)
+[![Build Status](https://travis-ci.org/digitalheir/ruby-couch-db.svg)](https://travis-ci.org/digitalheir/ruby-couch-db)
 [![Code Climate](https://codeclimate.com/repos/557eed7de30ba02ffe010520/badges/11baa9055d509aedf45d/gpa.svg)](https://codeclimate.com/repos/557eed7de30ba02ffe010520/feed)
 [![Test Coverage](https://codeclimate.com/repos/557eed7de30ba02ffe010520/badges/11baa9055d509aedf45d/coverage.svg)](https://codeclimate.com/repos/557eed7de30ba02ffe010520/coverage)
 
