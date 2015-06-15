@@ -1,7 +1,7 @@
 # Ruby CouchDB
 [![Build Status](https://travis-ci.org/digitalheir/couch-request.svg)](https://travis-ci.org/digitalheir/couch-request)
-[![Code Climate](https://codeclimate.com/repos/557ee25869568057820098bd/badges/98c814c32321c88e9c9f/gpa.svg)](https://codeclimate.com/repos/557ee25869568057820098bd/feed)
-[![Test Coverage](https://codeclimate.com/repos/557ee25869568057820098bd/badges/98c814c32321c88e9c9f/coverage.svg)](https://codeclimate.com/repos/557ee25869568057820098bd/coverage)
+[![Code Climate](https://codeclimate.com/repos/557eed7de30ba02ffe010520/badges/11baa9055d509aedf45d/gpa.svg)](https://codeclimate.com/repos/557eed7de30ba02ffe010520/feed)
+[![Test Coverage](https://codeclimate.com/repos/557eed7de30ba02ffe010520/badges/11baa9055d509aedf45d/coverage.svg)](https://codeclimate.com/repos/557eed7de30ba02ffe010520/coverage)
 
 Ruby gem to connect to a CouchDB database in Ruby, focusing on bulk requests. Make sure to watch Tim Anglade's excellent talk **[CouchDB & Ruby: You're Doing It Wrong](https://www.youtube.com/watch?v=zEMfvCqVL4E)**.
  
