@@ -1,6 +1,5 @@
-require 'couch/request/version'
+require 'couch/db/version'
 require 'net/http'
-require 'cgi'
 require 'json'
 require 'objspace'
 require 'openssl'

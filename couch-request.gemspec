@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'couch/request/version'
+require 'couch/db/version'
 
 Gem::Specification.new do |spec|
-  spec.name = 'couch-request'
-  spec.version = Couch::Request::VERSION
+  spec.name = 'couch-db'
+  spec.version = Couch::DB::VERSION
   spec.authors = ['Maarten Trompper']
   spec.email = ['maartentrompper@gmail.com']
 

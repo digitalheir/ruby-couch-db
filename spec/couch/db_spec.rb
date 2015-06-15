@@ -6,7 +6,7 @@ TEST_DB='test'
 
 # require 'json'
 
-describe Couch::Request do
+describe Couch do
   couch = nil
   it 'can initialize a Couch server' do
     expect(ENV['COUCH_TEST_URL']).not_to be nil

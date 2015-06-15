@@ -1,4 +1,4 @@
-# Couch Request
+# Ruby CouchDB
 [![Build Status](https://travis-ci.org/digitalheir/couch-request.svg)](https://travis-ci.org/digitalheir/couch-request)
 [![Code Climate](https://codeclimate.com/repos/557ee25869568057820098bd/badges/98c814c32321c88e9c9f/gpa.svg)](https://codeclimate.com/repos/557ee25869568057820098bd/feed)
 [![Test Coverage](https://codeclimate.com/repos/557ee25869568057820098bd/badges/98c814c32321c88e9c9f/coverage.svg)](https://codeclimate.com/repos/557ee25869568057820098bd/coverage)
@@ -16,7 +16,7 @@ alt="CouchDB & Ruby: You're Doing It Wrong by Tim Anglade" width="240" height="1
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'couch-request'
+gem 'couch-db'
 ```
 
 And then execute:
@@ -25,13 +25,13 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install couch-request
+    $ gem install couch-db
 
 ## Usage
 
 ```ruby
 
-    require 'couch/request'
+    require 'couch/db'
     
     class MyCouch < Couch::Server
       DB_NAME = 'my-db'
@@ -87,7 +87,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/digitalheir/couch-request. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/digitalheir/ruby-couch-db. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](contributor-covenant.org) code of conduct.
 
 
 ## License

@@ -4,6 +4,6 @@ CodeClimate::TestReporter.start
 
 $LOAD_PATH.unshift File.expand_path('../../lib',
                                     __FILE__)
-require 'couch/request/version'
-require 'couch/request'
+require 'couch/db/version'
+require 'couch/db'
 
