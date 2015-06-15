@@ -4,6 +4,16 @@ require 'json'
 require 'objspace'
 require 'openssl'
 
+class Hash
+  def include_symbol_or_string?(param)
+    if param.is_a? Symbol or param.is_a? String
+      include? param.to_sym or include? param.to_s
+    else
+      false
+    end
+  end
+end
+
 module Couch
   module BasicRequest
     def delete(uri)
@@ -106,46 +116,25 @@ module Couch
       #
       # Note that the 'include_docs' parameter must be set to true for this.
       def get_all_docs(database, params)
-        unless params.include? 'include_docs' or params.include? :include_docs
+        unless params.include_symbol_or_string? :include_docs
           params.merge!({:include_docs => true})
         end
         postfix = create_postfix(params)
         uri = URI::encode "/#{database}/_all_docs#{postfix}"
         res = get(uri)
-        result = JSON.parse(res.body)
-        docs = []
-        result['rows'].each do |row|
-          if row['error'] or !row['doc']
-            puts 'Found row with error:'
-            puts "#{row['key']}: #{row['error']}"
-            puts "#{row['reason']}"
-          else
-            docs << row['doc']
-          end
-        end
-        docs
+        append_docs(JSON.parse(res.body))
       end
+
 
       # If a block is given, performs the block for each +limit+-sized slice of _all_docs.
       # If no block is given, returns all docs by appending +limit+-sized slices of _all_docs.
       #
       # This method assumes your docs dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
       def all_docs(db, limit=500, opts={}, &block)
-        all_docs=[]
-        start_key=nil
-        loop do
-          opts = opts.merge({limit: limit})
-          if start_key
-            opts[:startkey]=start_key
-          end
-          docs = get_all_docs(db, opts)
-          if docs.length <= 0
-            break
-          else
-            start_key = handle_new_bulk_get(all_docs, block, docs)
-          end
-        end
-        all_docs.flatten
+        get_result = lambda { |options|
+          get_all_docs(db, options)
+        }
+        handle_bulk_get(block, get_result, limit, opts)
       end
 
       # Returns an array of all rows for given view.
@@ -163,22 +152,12 @@ module Couch
       #
       # This method assumes your keys dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
       def rows_for_view(db, design_doc, view, limit=500, opts={}, &block)
-        all_docs=[]
-        start_key=nil
-        loop do
-          opts = opts.merge({limit: limit})
-          if start_key
-            opts[:startkey]=start_key
-          end
-          docs = get_rows_for_view(db, design_doc, view, opts)
-          if docs.length <= 0
-            break
-          else
-            start_key = handle_new_bulk_get(all_docs, block, docs)
-          end
+        get_results = lambda do |options|
+          get_rows_for_view(db, design_doc, view, options)
         end
-        all_docs.flatten
+        handle_bulk_get(block, get_results, limit, opts)
       end
+
 
       # Returns an array of all ids in the database
       def get_all_ids(database, params)
@@ -201,21 +180,10 @@ module Couch
 
       # Returns an array of all ids in the database
       def all_ids(db, limit=500, opts={}, &block)
-        all_docs=[]
-        start_key=nil
-        loop do
-          opts = opts.merge({limit: limit})
-          if start_key
-            opts[:startkey]=start_key
-          end
-          docs = get_all_ids(db, opts)
-          if docs.length <= 0
-            break
-          else
-            start_key = handle_new_bulk_get(all_docs, block, docs)
-          end
+        get_results = lambda do |options|
+          get_all_ids(db, options)
         end
-        all_docs.flatten
+        handle_bulk_get(block, get_results, limit, opts)
       end
 
       # Returns an array of the full documents for given view, possibly filtered with given parameters. Note that the 'include_docs' parameter must be set to true for this.
@@ -236,31 +204,46 @@ module Couch
       #
       # This method assumes your keys dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
       def docs_for_view(db, design_doc, view, limit=500, opts={}, &block)
-        all_docs=[]
-        start_key=nil
+        get_results = lambda do |options|
+          get_docs_for_view(db, design_doc, view, options)
+        end
+        handle_bulk_get(block, get_results, limit, opts)
+      end
+
+      private
+      def append_docs(result)
+        docs = []
+        result['rows'].each do |row|
+          if row['error'] or !row['doc']
+            puts "Found row with error:\n#{row['key']}: #{row['error']}\n#{row['reason']}"
+          else
+            docs << row['doc']
+          end
+        end
+        docs
+      end
+
+      def handle_bulk_get(block, get_results, limit, opts)
+        all_docs = []
+        start_key = nil
         loop do
           opts = opts.merge({limit: limit})
           if start_key
             opts[:startkey]=start_key
           end
-          docs = get_docs_for_view(db, design_doc, view, opts)
+          docs = get_results.call(opts)
           if docs.length <= 0
             break
           else
-            start_key = handle_new_bulk_get(all_docs, block, docs)
+            if block
+              block.call(docs)
+            else
+              all_docs < docs
+            end
+            start_key ="\"#{docs.last['_id']}\\ufff0\""
           end
         end
         all_docs.flatten
-      end
-
-      private
-      def handle_new_bulk_get(all_docs, block, docs)
-        if block
-          block.call(docs)
-        else
-          all_docs < docs
-        end
-        "\"#{docs.last['_id']}\\ufff0\""
       end
     end
 
