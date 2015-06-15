@@ -86,6 +86,14 @@ Or install it yourself as:
     l = couch.flush_queue
     puts "Flushed remaining #{l} docs in queue"
     
+    # Access docs
+    couch.all_docs(MyCouch::DB_NAME, 4) do |slice|
+      puts "> Next #{slice.length} docs:"
+      slice.each do |doc|
+        puts doc
+      end
+    end 
+    
     # Delete database
     couch.delete("/#{MyCouch::DB_NAME}") 
 
