@@ -44,7 +44,7 @@ module Couch
 
     def posty_request(json, req)
       req.basic_auth @options[:name], @options[:password]
-      req['Content-Type'] = 'text/plain;charset=utf-8'
+      req['Content-Type'] = 'application/json;charset=utf-8'
       req.body = json
       request(req)
     end
