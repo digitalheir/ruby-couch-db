@@ -31,7 +31,7 @@ Or install it yourself as:
 
 ```ruby
 
-    require 'couch/db'
+    require 'couch'
     
     # Subclass Couch::Server for application-specific logic
     class MyCouch < Couch::Server

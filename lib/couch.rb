@@ -129,7 +129,7 @@ module Couch
       #
       # This method assumes your docs dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
       def all_docs(db, limit=500, opts={}, &block)
-        handle_bulk_get(block, lambda { |options| get_all_docs(db, options) }, limit, opts)
+        handle_bulk_get(block, lambda { |options| get_all_docs(db, options) }, limit, opts, '_id')
       end
 
       # Returns an array of all rows for given view.
@@ -147,7 +147,7 @@ module Couch
       #
       # This method assumes your keys dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
       def rows_for_view(db, design_doc, view, limit=500, opts={}, &block)
-        handle_bulk_get(block, lambda { |options| get_rows_for_view(db, design_doc, view, options) }, limit, opts)
+        handle_bulk_get(block, lambda { |options| get_rows_for_view(db, design_doc, view, options) }, limit, opts, 'id')
       end
 
 
@@ -172,7 +172,7 @@ module Couch
 
       # Returns an array of all ids in the database
       def all_ids(db, limit=500, opts={}, &block)
-        handle_bulk_get(block, lambda { |options| get_all_ids(db, options) }, limit, opts)
+        handle_bulk_get(block, lambda { |options| get_all_ids(db, options) }, limit, opts, 'id')
       end
 
       # Returns an array of the full documents for given view, possibly filtered with given parameters. Note that the 'include_docs' parameter must be set to true for this.
@@ -193,7 +193,7 @@ module Couch
       #
       # This method assumes your keys dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
       def docs_for_view(db, design_doc, view, limit=500, opts={}, &block)
-        handle_bulk_get(block, lambda { |options| get_docs_for_view(db, design_doc, view, options) }, limit, opts)
+        handle_bulk_get(block, lambda { |options| get_docs_for_view(db, design_doc, view, options) }, limit, opts, 'id')
       end
 
       private
@@ -209,7 +209,7 @@ module Couch
         docs
       end
 
-      def handle_bulk_get(block, get_results, limit, opts)
+      def handle_bulk_get(block, get_results, limit, opts, id_key)
         all_docs = []
         start_key = nil
         loop do
@@ -226,7 +226,7 @@ module Couch
             else
               all_docs < docs
             end
-            start_key ="\"#{docs.last['_id']}\\ufff0\""
+            start_key ="\"#{docs.last[id_key]}\\ufff0\""
           end
         end
         all_docs.flatten
