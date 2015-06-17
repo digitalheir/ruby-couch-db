@@ -19,27 +19,27 @@ module Couch
     def delete(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
       req=Net::HTTP::Delete.new(uri)
       req.basic_auth @options[:name], @options[:password]
-      request(req, open_timeout, read_timeout, fail_silent)
+      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
     end
 
     def head(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: true)
       req = Net::HTTP::Head.new(uri)
       req.basic_auth @options[:name], @options[:password]
-      request(req, open_timeout, read_timeout, fail_silent)
+      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
     end
 
     def get(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
       req = Net::HTTP::Get.new(uri)
       req.basic_auth @options[:name], @options[:password]
-      request(req, open_timeout, read_timeout, fail_silent)
+      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
     end
 
     def put(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
-      posty_request(json, Net::HTTP::Put.new(uri), open_timeout, read_timeout, fail_silent)
+      posty_request(json, Net::HTTP::Put.new(uri), open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
     end
 
     def post(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
-      posty_request(json, Net::HTTP::Post.new(uri), open_timeout, read_timeout, fail_silent)
+      posty_request(json, Net::HTTP::Post.new(uri), open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
     end
 
     def posty_request(json, req, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
