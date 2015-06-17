@@ -46,6 +46,10 @@ describe Couch do
     expect(doc['_id']).to eq('hello1')
   end
 
+  # TODO can create view
+  # TODO can query view
+  # TODO can perform HEAD request
+  
   it 'can request all documents' do
     i = 1
     couch.all_docs(TEST_DB, 2) do |slice|

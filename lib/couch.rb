@@ -16,40 +16,40 @@ end
 
 module Couch
   module BasicRequest
-    def delete(uri)
+    def delete(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
       req=Net::HTTP::Delete.new(uri)
       req.basic_auth @options[:name], @options[:password]
-      request(req)
+      request(req, open_timeout, read_timeout, fail_silent)
     end
 
-    def head(uri)
+    def head(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: true)
       req = Net::HTTP::Head.new(uri)
       req.basic_auth @options[:name], @options[:password]
-      request(req, fail_silent=true)
+      request(req, open_timeout, read_timeout, fail_silent)
     end
 
-    def get(uri)
+    def get(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
       req = Net::HTTP::Get.new(uri)
       req.basic_auth @options[:name], @options[:password]
-      request(req)
+      request(req, open_timeout, read_timeout, fail_silent)
     end
 
-    def put(uri, json)
-      posty_request(json, Net::HTTP::Put.new(uri))
+    def put(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+      posty_request(json, Net::HTTP::Put.new(uri), open_timeout, read_timeout, fail_silent)
     end
 
-    def post(uri, json)
-      posty_request(json, Net::HTTP::Post.new(uri))
+    def post(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+      posty_request(json, Net::HTTP::Post.new(uri), open_timeout, read_timeout, fail_silent)
     end
 
-    def posty_request(json, req)
+    def posty_request(json, req, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
       req.basic_auth @options[:name], @options[:password]
       req['Content-Type'] = 'application/json;charset=utf-8'
       req.body = json
-      request(req)
+      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
     end
 
-    def request(req, open_timeout=5*30, read_timeout=5*30, fail_silent=false)
+    def request(req, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
       res = Net::HTTP.start(@url.host, @url.port,
                             :use_ssl => @url.scheme =='https') do |http|
         http.open_timeout = open_timeout
