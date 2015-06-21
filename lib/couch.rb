@@ -15,54 +15,8 @@ class Hash
 end
 
 module Couch
+
   module BasicRequest
-    def delete(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
-      req=Net::HTTP::Delete.new(uri)
-      req.basic_auth @options[:name], @options[:password]
-      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
-    end
-
-    def head(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: true)
-      req = Net::HTTP::Head.new(uri)
-      req.basic_auth @options[:name], @options[:password]
-      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
-    end
-
-    def get(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
-      req = Net::HTTP::Get.new(uri)
-      req.basic_auth @options[:name], @options[:password]
-      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
-    end
-
-    def put(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
-      posty_request(json, Net::HTTP::Put.new(uri), open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
-    end
-
-    def post(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
-      posty_request(json, Net::HTTP::Post.new(uri), open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
-    end
-
-    def posty_request(json, req, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
-      req.basic_auth @options[:name], @options[:password]
-      req['Content-Type'] = 'application/json;charset=utf-8'
-      req.body = json
-      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
-    end
-
-    def request(req, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
-      res = Net::HTTP.start(@url.host, @url.port,
-                            :use_ssl => @url.scheme =='https') do |http|
-        http.open_timeout = open_timeout
-        http.read_timeout = read_timeout
-        http.request(req)
-      end
-      unless fail_silent or res.kind_of?(Net::HTTPSuccess)
-        # puts "CouchDb responsed with error code #{res.code}"
-        handle_error(req, res)
-      end
-      res
-    end
-
     def create_postfix(query_params, default='')
       if query_params
         params_a = []
@@ -74,10 +28,6 @@ module Couch
         postfix = default
       end
       postfix
-    end
-
-    def handle_error(req, res)
-      raise RuntimeError.new("#{res.code}:#{res.message}\nMETHOD:#{req.method}\nURI:#{req.path}\n#{res.body}")
     end
 
     module Get
@@ -350,9 +300,78 @@ module Couch
       if url.is_a? String
         url = URI(url)
       end
-      @url = url
+      @couch_url = url
       @options = options
       @options[:use_ssl] ||= true
+    end
+
+    def delete(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+      Request.new(Net::HTTP::Delete.new(uri), nil,
+                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+      ).perform
+    end
+
+    def head(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: true)
+      Request.new(Net::HTTP::Head.new(uri), nil,
+                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+      ).perform
+    end
+
+    def get(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+      Request.new(
+          Net::HTTP::Get.new(uri), nil,
+          @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+      ).perform
+    end
+
+    def put(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+      Request.new(Net::HTTP::Put.new(uri), json,
+                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+      ).perform
+    end
+
+    def post(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+      Request.new(Net::HTTP::Post.new(uri), json,
+                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+      ).perform
+    end
+
+    def couch_url
+      couch_url
+    end
+
+    class Request
+      def initialize(req, json, opts)
+        @req=req
+        @json = json
+        @options = opts
+      end
+
+      def perform
+        @req.basic_auth @options[:name], @options[:password]
+
+        if @json
+          @req['Content-Type'] = 'application/json;charset=utf-8'
+          @req.body = @json
+        end
+
+        res = Net::HTTP.start(@options[:couch_url].host, @options[:couch_url].port,
+                              :use_ssl => @options[:couch_url].scheme =='https') do |http|
+          http.open_timeout = @options[:open_timeout]
+          http.read_timeout = @options[:read_timeout]
+          http.request(@req)
+        end
+
+        unless @options[:fail_silent] or res.kind_of?(Net::HTTPSuccess)
+          # puts "CouchDb responsed with error code #{res.code}"
+          handle_error(@req, res)
+        end
+        res
+      end
+
+      def handle_error(req, res)
+        raise RuntimeError.new("#{res.code}:#{res.message}\nMETHOD:#{req.method}\nURI:#{req.path}\n#{res.body}")
+      end
     end
 
     include BasicRequest
