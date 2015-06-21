@@ -311,10 +311,18 @@ module Couch
       ).perform
     end
 
+    def new_delete(uri)
+      Request.new(Net::HTTP::Delete.new(uri)).couch_url(@couch_url)
+    end
+
     def head(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: true)
       Request.new(Net::HTTP::Head.new(uri), nil,
                   @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
       ).perform
+    end
+
+    def new_head(uri)
+      Request.new(Net::HTTP::Head.new(uri)).couch_url(@couch_url)
     end
 
     def get(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
@@ -324,10 +332,18 @@ module Couch
       ).perform
     end
 
+    def new_get(uri)
+      Request.new(Net::HTTP::Get.new(uri)).couch_url(@couch_url)
+    end
+
     def put(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
       Request.new(Net::HTTP::Put.new(uri), json,
                   @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
       ).perform
+    end
+
+    def new_put(uri)
+      Request.new(Net::HTTP::Put.new(uri)).couch_url(@couch_url)
     end
 
     def post(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
@@ -336,15 +352,40 @@ module Couch
       ).perform
     end
 
-    def couch_url
-      couch_url
+    def new_post(uri)
+      Request.new(Net::HTTP::Post.new(uri)).couch_url(@couch_url)
     end
 
     class Request
-      def initialize(req, json, opts)
+      def initialize(req, json=nil, opts={open_timeout: 5*30, read_timeout: 5*30, fail_silent: false})
         @req=req
         @json = json
         @options = opts
+      end
+
+      def json(json)
+        @json = json
+        self
+      end
+
+      def couch_url(couch_url)
+        @options.merge!({couch_url: couch_url})
+        self
+      end
+
+      def open_timeout(open_timeout)
+        @options.merge!({open_timeout: open_timeout})
+        self
+      end
+
+      def read_timeout(read_timeout)
+        @options.merge!({read_timeout: read_timeout})
+        self
+      end
+
+      def fail_silent(fail_silent)
+        @options.merge!({fail_silent: fail_silent})
+        self
       end
 
       def perform
