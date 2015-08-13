@@ -268,8 +268,18 @@ module Couch
       def get_bytesize_array(docs)
         bytesize = 0
         docs.each do |doc|
-          # TODO: Note that this may be inexact; see documentation for ObjectSpace.memsize_of
+          # Note that this may be inexact; see documentation for ObjectSpace.memsize_of
           bytesize += ObjectSpace.memsize_of doc
+
+          if doc['_attachments']
+            doc['_attachments'].each do |att|
+              att.each do |val|
+                if val['data']
+                  bytesize += val['data'].length # Number of chars, i.e. bytes
+                end
+              end
+            end
+          end
         end
         bytesize
       end
