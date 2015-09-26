@@ -308,10 +308,10 @@ module Couch
       Request.new(Net::HTTP::Head.new(uri)).couch_url(@couch_url)
     end
 
-    def get(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+    def get(uri)
       Request.new(
           Net::HTTP::Get.new(uri), nil,
-          @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+          @options
       ).perform
     end
 
@@ -319,9 +319,9 @@ module Couch
       Request.new(Net::HTTP::Get.new(uri)).couch_url(@couch_url)
     end
 
-    def put(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+    def put(uri, json)
       Request.new(Net::HTTP::Put.new(uri), json,
-                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+                  @options
       ).perform
     end
 
@@ -329,9 +329,9 @@ module Couch
       Request.new(Net::HTTP::Put.new(uri)).couch_url(@couch_url)
     end
 
-    def post(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+    def post(uri, json)
       Request.new(Net::HTTP::Post.new(uri), json,
-                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+                  @options
       ).perform
     end
 
