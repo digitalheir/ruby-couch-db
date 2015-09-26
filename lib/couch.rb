@@ -16,40 +16,40 @@ end
 
 module Couch
   module BasicRequest
-    def delete(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+    def delete(uri)
       req=Net::HTTP::Delete.new(uri)
       req.basic_auth @options[:name], @options[:password]
-      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
+      request(req)
     end
 
     def head(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: true)
       req = Net::HTTP::Head.new(uri)
       req.basic_auth @options[:name], @options[:password]
-      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
+      request(req)
     end
 
-    def get(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+    def get(uri)
       req = Net::HTTP::Get.new(uri)
       req.basic_auth @options[:name], @options[:password]
-      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
+      request(req)
     end
 
-    def put(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
-      posty_request(json, Net::HTTP::Put.new(uri), open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
+    def put(uri, json)
+      posty_request(json, Net::HTTP::Put.new(uri))
     end
 
-    def post(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
-      posty_request(json, Net::HTTP::Post.new(uri), open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
+    def post(uri, json)
+      posty_request(json, Net::HTTP::Post.new(uri))
     end
 
-    def posty_request(json, req, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+    def posty_request(json, req)
       req.basic_auth @options[:name], @options[:password]
       req['Content-Type'] = 'application/json;charset=utf-8'
       req.body = json
-      request(req, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent)
+      request(req)
     end
 
-    def request(req, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+    def request(req)
       res = Net::HTTP.start(@url.host, @url.port,
                             :use_ssl => @url.scheme =='https') do |http|
         http.open_timeout = open_timeout
@@ -250,7 +250,7 @@ module Couch
         post("/#{database}/_bulk_docs", body)
       end
 
-      def post_bulk_throttled(db, docs, max_size_mb: 15, max_array_length: 300, &block)
+      def post_bulk_throttled(db, docs, &block)
         # puts "Flushing #{docs.length} docs"
         bulk = []
         bytesize = 0
@@ -258,7 +258,7 @@ module Couch
           bulk << doc
           # TODO: Note that this may be inexact; see documentation for ObjectSpace.memsize_of
           bytesize += ObjectSpace.memsize_of doc
-          if bytesize/1024/1024 > max_size_mb or bulk.length >= max_array_length
+          if bytesize/1024/1024 > options[:flush_size_mb] or bulk.length >= options[:max_array_length]
             handle_bulk_flush(bulk, db, block)
             bytesize=0
           end
@@ -269,8 +269,8 @@ module Couch
       end
 
 
-      def post_bulk_if_big_enough(db, docs, flush_size_mb: 10, max_array_length: 300)
-        flush = (get_bytesize_array(docs) >= (flush_size_mb*1024*1024) or docs.length >= max_array_length)
+      def post_bulk_if_big_enough(db, docs)
+        flush = (get_bytesize_array(docs)/1024 >= (options[:flush_size_mb]*1024) or docs.length >= options[:max_array_length])
         if flush
           post_bulk_throttled(db, docs)
           docs.clear
@@ -318,6 +318,11 @@ module Couch
       @url = url
       @options = options
       @options[:use_ssl] ||= true
+      @options[:max_array_length] ||= 300
+      @options[:flush_size_mb] ||= 10
+      @options[:open_timeout] ||= 5*30
+      @options[:read_timeout] ||= 5*30
+      @options[:fail_silent] ||= false
     end
 
     include BasicRequest
