@@ -16,53 +16,6 @@ end
 
 module Couch
   module BasicRequest
-    def delete(uri)
-      req=Net::HTTP::Delete.new(uri)
-      req.basic_auth @options[:name], @options[:password]
-      request(req)
-    end
-
-    def head(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: true)
-      req = Net::HTTP::Head.new(uri)
-      req.basic_auth @options[:name], @options[:password]
-      request(req)
-    end
-
-    def get(uri)
-      req = Net::HTTP::Get.new(uri)
-      req.basic_auth @options[:name], @options[:password]
-      request(req)
-    end
-
-    def put(uri, json)
-      posty_request(json, Net::HTTP::Put.new(uri))
-    end
-
-    def post(uri, json)
-      posty_request(json, Net::HTTP::Post.new(uri))
-    end
-
-    def posty_request(json, req)
-      req.basic_auth @options[:name], @options[:password]
-      req['Content-Type'] = 'application/json;charset=utf-8'
-      req.body = json
-      request(req)
-    end
-
-    def request(req)
-      res = Net::HTTP.start(@url.host, @url.port,
-                            :use_ssl => @url.scheme =='https') do |http|
-        http.open_timeout = open_timeout
-        http.read_timeout = read_timeout
-        http.request(req)
-      end
-      unless fail_silent or res.kind_of?(Net::HTTPSuccess)
-        # puts "CouchDb responsed with error code #{res.code}"
-        handle_error(req, res)
-      end
-      res
-    end
-
     def create_postfix(query_params, default='')
       if query_params
         params_a = []
@@ -74,10 +27,6 @@ module Couch
         postfix = default
       end
       postfix
-    end
-
-    def handle_error(req, res)
-      raise RuntimeError.new("#{res.code}:#{res.message}\nMETHOD:#{req.method}\nURI:#{req.path}\n#{res.body}")
     end
 
     module Get
@@ -127,9 +76,28 @@ module Couch
       # If a block is given, performs the block for each +limit+-sized slice of _all_docs.
       # If no block is given, returns all docs by appending +limit+-sized slices of _all_docs.
       #
-      # This method assumes your docs dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
-      def all_docs(db, limit=500, opts={}, &block)
-        handle_bulk_get(block, lambda { |options| get_all_docs(db, options) }, limit, opts, '_id')
+      # This method assumes your docs don't have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
+      def all_docs(db, limit=750, opts={}, &block)
+        all_docs = []
+        start_key = nil
+        loop do
+          opts = opts.merge({limit: limit})
+          if start_key
+            opts[:startkey]=start_key
+          end
+          docs = (lambda { |options| get_all_docs(db, options) }).call(opts)
+          if docs.length <= 0
+            break
+          else
+            if block
+              block.call(docs)
+            else
+              all_docs < docs
+            end
+            start_key ="\"#{docs.last['_id']}\\ufff0\""
+          end
+        end
+        all_docs.flatten
       end
 
       # Returns an array of all rows for given view.
@@ -144,10 +112,8 @@ module Couch
 
       # If a block is given, performs the block for each +limit+-sized slice of rows for the given view.
       # If no block is given, returns all rows by appending +limit+-sized slices of the given view.
-      #
-      # This method assumes your keys dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
       def rows_for_view(db, design_doc, view, limit=500, opts={}, &block)
-        handle_bulk_get(block, lambda { |options| get_rows_for_view(db, design_doc, view, options) }, limit, opts, 'id')
+        get_all_views(lambda { |options| get_rows_for_view(db, design_doc, view, options) }, limit, opts, block)
       end
 
 
@@ -172,7 +138,26 @@ module Couch
 
       # Returns an array of all ids in the database
       def all_ids(db, limit=500, opts={}, &block)
-        handle_bulk_get(block, lambda { |options| get_all_ids(db, options) }, limit, opts, 'id')
+        all_docs = []
+        start_key = nil
+        loop do
+          opts = opts.merge({limit: limit})
+          if start_key
+            opts[:startkey]=start_key
+          end
+          docs = (lambda { |options| get_all_ids(db, options) }).call(opts)
+          if docs.length <= 0
+            break
+          else
+            if block
+              block.call(docs)
+            else
+              all_docs < docs
+            end
+            start_key ="\"#{docs.last}\\ufff0\""
+          end
+        end
+        all_docs.flatten
       end
 
       # Returns an array of the full documents for given view, possibly filtered with given parameters. Note that the 'include_docs' parameter must be set to true for this.
@@ -190,13 +175,35 @@ module Couch
 
       # If a block is given, performs the block for each +limit+-sized slice of documents for the given view.
       # If no block is given, returns all docs by appending +limit+-sized slices of the given view.
-      #
-      # This method assumes your keys dont have the high-value Unicode character \ufff0. If it does, then behaviour is undefined. The reason why we use the startkey parameter instead of skip is that startkey is faster.
-      def docs_for_view(db, design_doc, view, limit=500, opts={}, &block)
-        handle_bulk_get(block, lambda { |options| get_docs_for_view(db, design_doc, view, options) }, limit, opts, 'id')
+      def docs_for_view(db, design_doc, view, limit=750, opts={}, &block)
+        get_all_views(lambda { |options| get_docs_for_view(db, design_doc, view, options) }, limit, opts, block)
       end
 
       private
+
+      def get_all_views(next_results, limit, opts, block)
+        all = []
+        offset = 0
+        loop do
+          opts = opts.merge({
+                                limit: limit,
+                                skip: offset,
+                            })
+          docs = next_results.call(opts)
+          if docs.length <= 0
+            break
+          else
+            if block
+              block.call(docs)
+            else
+              all < docs
+            end
+            offset += limit
+          end
+        end
+        all.flatten
+      end
+
       def append_docs(result)
         docs = []
         result['rows'].each do |row|
@@ -207,29 +214,6 @@ module Couch
           end
         end
         docs
-      end
-
-      def handle_bulk_get(block, get_results, limit, opts, id_key)
-        all_docs = []
-        start_key = nil
-        loop do
-          opts = opts.merge({limit: limit})
-          if start_key
-            opts[:startkey]=start_key
-          end
-          docs = get_results.call(opts)
-          if docs.length <= 0
-            break
-          else
-            if block
-              block.call(docs)
-            else
-              all_docs < docs
-            end
-            start_key ="\"#{docs.last[id_key]}\\ufff0\""
-          end
-        end
-        all_docs.flatten
       end
     end
 
@@ -276,7 +260,6 @@ module Couch
 
       private
 
-
       def handle_bulk_flush(bulk, db, block)
         res = post_bulk(db, bulk)
         error_count=0
@@ -303,7 +286,7 @@ module Couch
       if url.is_a? String
         url = URI(url)
       end
-      @url = url
+      @couch_url = url
       @options = options
       @options[:use_ssl] ||= true
       @options[:max_array_length] ||= 250
@@ -311,6 +294,116 @@ module Couch
       @options[:open_timeout] ||= 5*30
       @options[:read_timeout] ||= 5*30
       @options[:fail_silent] ||= false
+    end
+
+    def delete(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+      Request.new(Net::HTTP::Delete.new(uri), nil,
+                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+      ).perform
+    end
+
+    def new_delete(uri)
+      Request.new(Net::HTTP::Delete.new(uri)).couch_url(@couch_url)
+    end
+
+    def head(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: true)
+      Request.new(Net::HTTP::Head.new(uri), nil,
+                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+      ).perform
+    end
+
+    def new_head(uri)
+      Request.new(Net::HTTP::Head.new(uri)).couch_url(@couch_url)
+    end
+
+    def get(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+      Request.new(
+          Net::HTTP::Get.new(uri), nil,
+          @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+      ).perform
+    end
+
+    def new_get(uri)
+      Request.new(Net::HTTP::Get.new(uri)).couch_url(@couch_url)
+    end
+
+    def put(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+      Request.new(Net::HTTP::Put.new(uri), json,
+                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+      ).perform
+    end
+
+    def new_put(uri)
+      Request.new(Net::HTTP::Put.new(uri)).couch_url(@couch_url)
+    end
+
+    def post(uri, json, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+      Request.new(Net::HTTP::Post.new(uri), json,
+                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+      ).perform
+    end
+
+    def new_post(uri)
+      Request.new(Net::HTTP::Post.new(uri)).couch_url(@couch_url)
+    end
+
+    class Request
+      def initialize(req, json=nil, opts={open_timeout: 5*30, read_timeout: 5*30, fail_silent: false})
+        @req=req
+        @json = json
+        @options = opts
+      end
+
+      def json(json)
+        @json = json
+        self
+      end
+
+      def couch_url(couch_url)
+        @options.merge!({couch_url: couch_url})
+        self
+      end
+
+      def open_timeout(open_timeout)
+        @options.merge!({open_timeout: open_timeout})
+        self
+      end
+
+      def read_timeout(read_timeout)
+        @options.merge!({read_timeout: read_timeout})
+        self
+      end
+
+      def fail_silent(fail_silent)
+        @options.merge!({fail_silent: fail_silent})
+        self
+      end
+
+      def perform
+        @req.basic_auth @options[:name], @options[:password]
+
+        if @json
+          @req['Content-Type'] = 'application/json;charset=utf-8'
+          @req.body = @json
+        end
+
+        res = Net::HTTP.start(@options[:couch_url].host, @options[:couch_url].port,
+                              :use_ssl => @options[:couch_url].scheme =='https') do |http|
+          http.open_timeout = @options[:open_timeout]
+          http.read_timeout = @options[:read_timeout]
+          http.request(@req)
+        end
+
+        unless @options[:fail_silent] or res.kind_of?(Net::HTTPSuccess)
+          # puts "CouchDb responsed with error code #{res.code}"
+          handle_error(@req, res)
+        end
+        res
+      end
+
+      def handle_error(req, res)
+        raise RuntimeError.new("#{res.code}:#{res.message}\nMETHOD:#{req.method}\nURI:#{req.path}\n#{res.body}")
+      end
     end
 
     include BasicRequest

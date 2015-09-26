@@ -8,3 +8,6 @@
 /spec/reports/
 /tmp/
 .idea/
+
+lol.rb
+rake_secret
