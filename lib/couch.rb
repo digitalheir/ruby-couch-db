@@ -63,13 +63,13 @@ module Couch
       #
       # Note that the 'include_docs' parameter must be set to true for this.
       def get_all_docs(database, params)
-        unless params.include_symbol_or_string? :include_docs
-          params.merge!({:include_docs => true})
-        end
+        # unless params.include_symbol_or_string? :include_docs
+        #   params.merge!({:include_docs => true})
+        # end
         postfix = create_postfix(params)
         uri = URI::encode "/#{database}/_all_docs#{postfix}"
         res = get(uri)
-        append_docs(JSON.parse(res.body))
+        JSON.parse(res.body)['rows']
       end
 
 
@@ -204,17 +204,6 @@ module Couch
         all.flatten
       end
 
-      def append_docs(result)
-        docs = []
-        result['rows'].each do |row|
-          if row['error'] or !row['doc']
-            puts "Found row with error:\n#{row['key']}: #{row['error']}\n#{row['reason']}"
-          else
-            docs << row['doc']
-          end
-        end
-        docs
-      end
     end
 
     module Delete
@@ -283,13 +272,14 @@ module Couch
 
   class Server
     attr_accessor :options
-    
+
     def initialize(url, options)
       if url.is_a? String
         url = URI(url)
       end
       @couch_url = url
       @options = options
+      @options[:couch_url] = @couch_url
       @options[:use_ssl] ||= true
       @options[:max_array_length] ||= 250
       @options[:flush_size_mb] ||= 10
@@ -298,9 +288,9 @@ module Couch
       @options[:fail_silent] ||= false
     end
 
-    def delete(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: false)
+    def delete(uri)
       Request.new(Net::HTTP::Delete.new(uri), nil,
-                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+                  @options
       ).perform
     end
 
@@ -308,9 +298,9 @@ module Couch
       Request.new(Net::HTTP::Delete.new(uri)).couch_url(@couch_url)
     end
 
-    def head(uri, open_timeout: 5*30, read_timeout: 5*30, fail_silent: true)
+    def head(uri)
       Request.new(Net::HTTP::Head.new(uri), nil,
-                  @options.merge({couch_url: @couch_url, open_timeout: open_timeout, read_timeout: read_timeout, fail_silent: fail_silent})
+                  @options
       ).perform
     end
 

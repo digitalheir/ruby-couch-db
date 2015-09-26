@@ -84,8 +84,9 @@ describe Couch do
 
   it 'can request all documents' do
     i = 0
-    couch.all_docs(TEST_DB, 2) do |slice|
-      slice.each do |doc|
+    couch.all_docs(TEST_DB, 2,{include_docs:true}) do |slice|
+      slice.each do |row|
+        doc=row['doc']
         if i == 0
           expect(doc['_id']).to eq('_design/ddoc')
         else
