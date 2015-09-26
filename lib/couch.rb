@@ -253,14 +253,10 @@ module Couch
       def post_bulk_throttled(db, docs, &block)
         # puts "Flushing #{docs.length} docs"
         bulk = []
-        bytesize = 0
         docs.each do |doc|
           bulk << doc
-          # TODO: Note that this may be inexact; see documentation for ObjectSpace.memsize_of
-          bytesize += ObjectSpace.memsize_of doc
-          if bytesize/1024/1024 > options[:flush_size_mb] or bulk.length >= options[:max_array_length]
+          if bulk.to_json.bytesize/1024/1024 > options[:flush_size_mb] or bulk.length >= options[:max_array_length]
             handle_bulk_flush(bulk, db, block)
-            bytesize=0
           end
         end
         if bulk.length > 0
@@ -270,7 +266,7 @@ module Couch
 
 
       def post_bulk_if_big_enough(db, docs)
-        flush = (get_bytesize_array(docs)/1024 >= (options[:flush_size_mb]*1024) or docs.length >= options[:max_array_length])
+        flush = (docs.to_json.bytesize / 1024 >= (options[:flush_size_mb]*1024) or docs.length >= options[:max_array_length])
         if flush
           post_bulk_throttled(db, docs)
           docs.clear
@@ -280,14 +276,6 @@ module Couch
 
       private
 
-      def get_bytesize_array(docs)
-        bytesize = 0
-        docs.each do |doc|
-          # TODO: Note that this may be inexact; see documentation for ObjectSpace.memsize_of
-          bytesize += ObjectSpace.memsize_of doc
-        end
-        bytesize
-      end
 
       def handle_bulk_flush(bulk, db, block)
         res = post_bulk(db, bulk)
@@ -318,7 +306,7 @@ module Couch
       @url = url
       @options = options
       @options[:use_ssl] ||= true
-      @options[:max_array_length] ||= 300
+      @options[:max_array_length] ||= 250
       @options[:flush_size_mb] ||= 10
       @options[:open_timeout] ||= 5*30
       @options[:read_timeout] ||= 5*30
