@@ -282,6 +282,8 @@ module Couch
   end
 
   class Server
+    attr_accessor :options
+    
     def initialize(url, options)
       if url.is_a? String
         url = URI(url)

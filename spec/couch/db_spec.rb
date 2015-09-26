@@ -21,6 +21,7 @@ describe Couch do
         }
     )
     expect(couch).not_to be nil
+    expect(couch.options).not_to be nil
   end
 
   it 'can create test db' do
@@ -29,6 +30,7 @@ describe Couch do
 
   it 'can create documents' do
     i=0
+    couch.options[:max_array_length] = 2
     couch.post_bulk_throttled(TEST_DB, [
                                          {_id: 'hello1'},
                                          {_id: 'hello2'},
@@ -41,8 +43,7 @@ describe Couch do
                                               }
                                           }
                                          }
-                                     ],
-                              max_array_length: 2) do |res|
+                                     ]) do |res|
       expect(res.kind_of?(Net::HTTPSuccess)).to eq(true)
       i+=1
     end
