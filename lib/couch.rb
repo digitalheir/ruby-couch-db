@@ -31,8 +31,8 @@ module Couch
 
     module Get
       # Returns parsed doc from database
-      def get_doc(database, id)
-        res = get("/#{database}/#{CGI.escape(id)}")
+      def get_doc(database, id, params={})
+        res = get("/#{database}/#{CGI.escape(id)}#{create_postfix(params)}")
         JSON.parse(res.body)
       end
 
@@ -379,8 +379,11 @@ module Couch
           @req.body = @json
         end
 
-        res = Net::HTTP.start(@options[:couch_url].host, @options[:couch_url].port,
-                              :use_ssl => @options[:couch_url].scheme =='https') do |http|
+        res = Net::HTTP.start(
+            @options[:couch_url].host,
+            @options[:couch_url].port,
+            {:use_ssl => @options[:couch_url].scheme =='https'}
+        ) do |http|
           http.open_timeout = @options[:open_timeout]
           http.read_timeout = @options[:read_timeout]
           http.request(@req)

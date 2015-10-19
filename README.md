@@ -43,14 +43,19 @@ Or install it yourself as:
             {
                 name: 'user',
                 password: 'supersecretpassword' # May be nil for public databases 
+
+                max_array_length: 50, # Number of documents queued before an automatic write to the database occurs. Defaults to 250.
+                flush_size_mb: 15, # Size of documents queued before an automatic write to the database occurs. Defaults to 10.
+                open_timeout: 5*60, # HTTP timeout for opening connections, defaults to 5*30
+                read_timeout: 5*60, # HTTP timeout for opening connections, defaults to 5*30
             }
         )
         @queue = []
       end
-  
-      def add_to_queue(doc, max_array_length: 3)
+    
+      def add_to_queue(doc)
         @queue << doc
-        flushed = post_bulk_if_big_enough(DB_NAME, @queue, max_array_length: max_array_length)
+        flushed = post_bulk_if_big_enough(DB_NAME, @queue)
         puts "Added #{doc[:_id]} to queue. Flushed: #{flushed}"
       end
     
@@ -64,23 +69,25 @@ Or install it yourself as:
     end
     
     #####################
-    # Script starts here 
+    # Script starts here
     #####################
     
     # Initialize couch interface
     couch = MyCouch.new
-    couch.put("/#{MyCouch::DB_NAME}",'') # Create database
+    couch.put("/#{MyCouch::DB_NAME}", '') # Create database
     
     # Add some documents to our database, triggering a bulk post after every 3 docs
+    couch.options[:max_array_length] = 3
     (1..11).each do |i|
       couch.add_to_queue({_id: "document-#{i}"})
     end
     
-    # Get single document. 
+    # Get single document.
     puts couch.get_doc(
-                       'document-7', 
-                       {stale: 'ok'} # Pass URL parameters in a hash
-                      )
+             MyCouch::DB_NAME,
+             'document-7',
+             {stale: 'ok'} # Pass URL parameters in a hash
+         )
     
     # Flush remaining docs
     l = couch.flush_queue
@@ -92,11 +99,10 @@ Or install it yourself as:
       slice.each do |doc|
         puts doc
       end
-    end 
+    end
     
     # Delete database
     couch.delete("/#{MyCouch::DB_NAME}") 
-
 ```
 
 ## Development
