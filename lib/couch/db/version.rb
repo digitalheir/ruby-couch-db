@@ -1,6 +1,6 @@
 module Couch
   # noinspection ALL
   module DB
-    VERSION = '0.11.1'
+    VERSION = '1.0.0'
   end
 end
